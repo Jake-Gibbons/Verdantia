@@ -1,32 +1,19 @@
-//
-//  VerdantiaApp.swift
-//  Verdantia
-//
-//  Created by Jake Gibbons on 28/07/2025.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct VerdantiaApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TabView {
+                NavigationStack { PlantListView() }
+                    .tabItem { Label("Encyclopedia", systemImage: "leaf") }
+                NavigationStack { MyGardenView() }
+                    .tabItem { Label("My Garden", systemImage: "heart.fill") }
+                NavigationStack { WateringScheduleView() }
+                    .tabItem { Label("Calendar", systemImage: "calendar") }
+            }
         }
-        .modelContainer(sharedModelContainer)
+        .modelContainer(for: SavedPlant.self)
     }
 }
