@@ -17,3 +17,15 @@ struct VerdantiaApp: App {
         .modelContainer(for: SavedPlant.self)
     }
 }
+
+#Preview {
+    PlantListView()
+}
+
+#Preview{
+    MyGardenView()
+}
+
+#Preview{
+    WateringScheduleView()
+}

@@ -44,7 +44,6 @@ struct MyGardenView: View {
                 .onTapGesture {
                     selectedPlant = plant
                 }
-                .glassCard()
             }
         }
         .sheet(item: $selectedPlant) { GardenNoteView(plant: $0) }
