@@ -12,7 +12,7 @@ struct APIPlantListResponse: Decodable {
 struct APIPlant: Decodable, Identifiable {
     let id: Int
     let common_name: String?
-    let scientific_name: String?
+    let scientific_name: [String]?   // ← change to array
     let watering: String?
     let default_image: APIPlantImage?
 

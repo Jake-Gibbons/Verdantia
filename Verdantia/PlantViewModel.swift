@@ -1,30 +1,56 @@
 import Foundation
 import Combine
 
-/// ViewModel responsible for fetching plants and exposing them to the UI.
+@MainActor
 final class PlantViewModel: ObservableObject {
     @Published private(set) var plants: [APIPlant] = []
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
 
     private var currentPage = 1
+    private var canLoadMore = true
+    private var isFetching = false
+    private var currentSearchQuery = ""
 
-    /// Loads plants asynchronously and updates published properties on the main actor.
-    @MainActor
-    func loadPlants() async {
+    func loadNextPageIfNeeded(currentItem: APIPlant?, query: String = "") async {
+        guard let currentItem = currentItem else {
+            await loadNextPage(query: query)
+            return
+        }
+
+        let thresholdIndex = plants.index(plants.endIndex, offsetBy: -5)
+        if plants.firstIndex(where: { $0.id == currentItem.id }) == thresholdIndex {
+            await loadNextPage(query: query)
+        }
+    }
+
+    func loadNextPage(query: String = "") async {
+        guard !isFetching && canLoadMore else { return }
+        isFetching = true
         isLoading = true
         error = nil
-        do {
-            let fetched = try await PlantAPIService.shared.fetchPlants(page: currentPage)
-            plants = fetched
-        } catch let decodingError as DecodingError {
-            print("Decoding error: \(decodingError)")
-            self.error = decodingError
-        } catch {
-            // Rename the caught error to avoid shadowing the property.
-            let genericError = error
-            self.error = genericError
+
+        // Reset pagination if the query changed
+        if query != currentSearchQuery {
+            currentSearchQuery = query
+            currentPage = 1
+            plants = []
+            canLoadMore = true
         }
+
+        do {
+            let fetched = try await PlantAPIService.shared.fetchPlants(page: currentPage, query: query)
+            if fetched.isEmpty {
+                canLoadMore = false
+            } else {
+                plants += fetched
+                currentPage += 1
+            }
+        } catch {
+            self.error = error
+        }
+
+        isFetching = false
         isLoading = false
     }
 
@@ -32,7 +58,7 @@ final class PlantViewModel: ObservableObject {
         SavedPlant(
             id: apiPlant.id,
             commonName: apiPlant.common_name ?? "Unknown",
-            scientificName: apiPlant.scientific_name ?? "",
+            scientificName: apiPlant.scientific_name?.joined(separator: ", ") ?? "",
             imageUrl: apiPlant.default_image?.original_url ?? "",
             wateringIntervalDays: wateringInterval(for: apiPlant)
         )

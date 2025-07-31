@@ -7,18 +7,9 @@ struct PlantListView: View {
     @Query private var savedPlants: [SavedPlant]
     @State private var searchText = ""
 
-    /// Filters plants based on search text.
-    /// Uses an empty string for nil names to avoid nil comparisons.
-    private var filteredPlants: [APIPlant] {
-        guard !searchText.isEmpty else { return viewModel.plants }
-        return viewModel.plants.filter {
-            ($0.common_name ?? "").lowercased().contains(searchText.lowercased())
-        }
-    }
-
     var body: some View {
         VStack {
-            if viewModel.isLoading {
+            if viewModel.isLoading && viewModel.plants.isEmpty {
                 ProgressView("Loading plants…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let error = viewModel.error {
@@ -27,34 +18,77 @@ struct PlantListView: View {
                         .multilineTextAlignment(.center)
                         .padding()
                     Button("Retry") {
-                        Task { await viewModel.loadPlants() }
+                        Task { await viewModel.loadNextPage(query: searchText) }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                List(filteredPlants) { plant in
-                    HStack {
-                        // AsyncImage and heart button unchanged ...
-                        VStack(alignment: .leading) {
-                            // Use default values when names are nil.
-                            Text(plant.common_name ?? "Unknown")
-                                .font(.headline)
-                            Text(plant.scientific_name ?? "")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                List {
+                    ForEach(viewModel.plants) { plant in
+                        HStack {
+                            AsyncImage(url: URL(string: plant.default_image?.original_url ?? "")) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable().aspectRatio(contentMode: .fill)
+                                case .failure(_):
+                                    Image(systemName: "photo")
+                                        .resizable().scaledToFit()
+                                        .foregroundColor(.secondary)
+                                case .empty:
+                                    Color.gray.opacity(0.2)
+                                @unknown default:
+                                    Color.gray.opacity(0.2)
+                                }
+                            }
+                            .frame(width: 60, height: 60)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            VStack(alignment: .leading) {
+                                Text(plant.common_name ?? "Unknown")
+                                    .font(.headline)
+                                Text(plant.scientific_name?.joined(separator: ", ") ?? "")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            Spacer()
+
+                            Button {
+                                if !savedPlants.contains(where: { $0.id == plant.id }) {
+                                    let saved = viewModel.convertToSavedPlant(from: plant)
+                                    context.insert(saved)
+                                }
+                            } label: {
+                                Image(systemName: savedPlants.contains(where: { $0.id == plant.id }) ? "heart.fill" : "heart")
+                                    .foregroundStyle(savedPlants.contains(where: { $0.id == plant.id }) ? Color.red : Color.blue)
+                            }
                         }
-                        Spacer()
-                        // Heart button and other UI remain the same.
+                        .task {
+                            await viewModel.loadNextPageIfNeeded(currentItem: plant, query: searchText)
+                        }
+                    }
+
+                    if viewModel.isLoading {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
                     }
                 }
-                .searchable(text: $searchText)
                 .listStyle(.plain)
+                .searchable(text: $searchText)
             }
         }
         .navigationTitle("Plant Encyclopedia")
+        .onChange(of: searchText) { _, newQuery in
+            Task {
+                await viewModel.loadNextPage(query: newQuery)
+            }
+        }
         .task {
             if viewModel.plants.isEmpty {
-                await viewModel.loadPlants()
+                await viewModel.loadNextPage()
             }
         }
     }
