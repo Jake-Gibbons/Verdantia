@@ -37,7 +37,7 @@ struct PlantListView: View {
                         .multilineTextAlignment(.center)
                         .padding()
                     Button("Retry") {
-                        Task { await viewModel.loadAllPlants() }
+                        Task { await viewModel.search(query: searchText) }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -106,11 +106,13 @@ struct PlantListView: View {
             }
         }
         .navigationTitle("Plant Encyclopedia")
+        .onChange(of: searchText) { _, newQuery in
+            Task { await viewModel.search(query: newQuery) }
+        }
         .task {
             // Download all plants once when the view appears, then persist them
             if viewModel.plants.isEmpty {
-                await viewModel.loadAllPlants()
-                await viewModel.persistDownloadedPlants(using: context)
+                await viewModel.search()
             }
         }
     }
