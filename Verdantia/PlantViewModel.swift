@@ -7,12 +7,24 @@ final class PlantViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
 
+    private let cache = PlantCache.shared
+    private var allCachedPlants: [APIPlant]?
+
     private var currentPage = 1
     private var canLoadMore = true
     private var isFetching = false
     private var currentSearchQuery = ""
 
+    init() {
+        if let cached = cache.load() {
+            allCachedPlants = cached
+            plants = cached
+            canLoadMore = false
+        }
+    }
+
     func loadNextPageIfNeeded(currentItem: APIPlant?, query: String = "") async {
+        guard allCachedPlants == nil else { return }
         guard let currentItem = currentItem else {
             await loadNextPage(query: query)
             return
@@ -21,6 +33,26 @@ final class PlantViewModel: ObservableObject {
         let thresholdIndex = max(plants.count - 5, 0)
         if let index = plants.firstIndex(where: { $0.id == currentItem.id }),
            index >= thresholdIndex {
+            await loadNextPage(query: query)
+        }
+    }
+
+    /// Search locally when cache is available, otherwise fall back to remote loading.
+    func search(query: String = "") async {
+        if let cached = allCachedPlants {
+            isLoading = false
+            currentSearchQuery = query
+            if query.isEmpty {
+                plants = cached
+            } else {
+                let lower = query.lowercased()
+                plants = cached.filter {
+                    ($0.common_name?.lowercased().contains(lower) ?? false) ||
+                    ($0.scientific_name?.joined(separator: " ").lowercased().contains(lower) ?? false)
+                }
+            }
+        } else {
+
             await loadNextPage(query: query)
         }
     }

@@ -18,7 +18,7 @@ struct PlantListView: View {
                         .multilineTextAlignment(.center)
                         .padding()
                     Button("Retry") {
-                        Task { await viewModel.loadNextPage(query: searchText) }
+                        Task { await viewModel.search(query: searchText) }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -83,13 +83,11 @@ struct PlantListView: View {
         }
         .navigationTitle("Plant Encyclopedia")
         .onChange(of: searchText) { _, newQuery in
-            Task {
-                await viewModel.loadNextPage(query: newQuery)
-            }
+            Task { await viewModel.search(query: newQuery) }
         }
         .task {
             if viewModel.plants.isEmpty {
-                await viewModel.loadNextPage()
+                await viewModel.search()
             }
         }
     }
