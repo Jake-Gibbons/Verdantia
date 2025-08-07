@@ -18,8 +18,9 @@ final class PlantViewModel: ObservableObject {
             return
         }
 
-        let thresholdIndex = plants.index(plants.endIndex, offsetBy: -5)
-        if plants.firstIndex(where: { $0.id == currentItem.id }) == thresholdIndex {
+        let thresholdIndex = max(plants.count - 5, 0)
+        if let index = plants.firstIndex(where: { $0.id == currentItem.id }),
+           index >= thresholdIndex {
             await loadNextPage(query: query)
         }
     }
