@@ -18,13 +18,14 @@ struct PlantListView: View {
                         .multilineTextAlignment(.center)
                         .padding()
                     Button("Retry") {
-                        Task { await viewModel.loadNextPage(query: searchText) }
+                        Task { await viewModel.search(query: searchText) }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 List {
                     ForEach(viewModel.plants) { plant in
+                        let isSaved = savedPlants.contains { $0.id == plant.id }
                         HStack {
                             AsyncImage(url: URL(string: plant.default_image?.original_url ?? "")) { phase in
                                 switch phase {
@@ -54,13 +55,13 @@ struct PlantListView: View {
                             Spacer()
 
                             Button {
-                                if !savedPlants.contains(where: { $0.id == plant.id }) {
+                                if !isSaved {
                                     let saved = viewModel.convertToSavedPlant(from: plant)
                                     context.insert(saved)
                                 }
                             } label: {
-                                Image(systemName: savedPlants.contains(where: { $0.id == plant.id }) ? "heart.fill" : "heart")
-                                    .foregroundStyle(savedPlants.contains(where: { $0.id == plant.id }) ? Color.red : Color.blue)
+                                Image(systemName: isSaved ? "heart.fill" : "heart")
+                                    .foregroundStyle(isSaved ? Color.red : Color.blue)
                             }
                         }
                         .task {
@@ -82,13 +83,11 @@ struct PlantListView: View {
         }
         .navigationTitle("Plant Encyclopedia")
         .onChange(of: searchText) { _, newQuery in
-            Task {
-                await viewModel.loadNextPage(query: newQuery)
-            }
+            Task { await viewModel.search(query: newQuery) }
         }
         .task {
             if viewModel.plants.isEmpty {
-                await viewModel.loadNextPage()
+                await viewModel.search()
             }
         }
     }
