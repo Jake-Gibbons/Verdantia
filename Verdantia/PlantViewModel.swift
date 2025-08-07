@@ -52,6 +52,7 @@ final class PlantViewModel: ObservableObject {
                 }
             }
         } else {
+
             await loadNextPage(query: query)
         }
     }
