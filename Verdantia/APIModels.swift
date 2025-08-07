@@ -1,6 +1,6 @@
 import Foundation
 
-/// Top‐level response for the Perenual API.
+/// Top-level response for the Perenual API.
 /// The API can include other keys (pagination, etc.), but extra keys are ignored.
 struct APIPlantListResponse: Decodable {
     let data: [APIPlant]
@@ -12,7 +12,7 @@ struct APIPlantListResponse: Decodable {
 struct APIPlant: Decodable, Identifiable {
     let id: Int
     let common_name: String?
-    let scientific_name: [String]?   // ← change to array
+    let scientific_name: [String]? // Now supports multiple scientific names
     let watering: String?
     let default_image: APIPlantImage?
 

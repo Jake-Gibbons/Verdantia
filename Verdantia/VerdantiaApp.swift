@@ -1,31 +1,22 @@
 import SwiftUI
-import SwiftData
 
 @main
 struct VerdantiaApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
     var body: some Scene {
         WindowGroup {
-            TabView {
-                NavigationStack { PlantListView() }
-                    .tabItem { Label("Encyclopedia", systemImage: "leaf") }
-                NavigationStack { MyGardenView() }
-                    .tabItem { Label("My Garden", systemImage: "heart.fill") }
-                NavigationStack { WateringScheduleView() }
-                    .tabItem { Label("Calendar", systemImage: "calendar") }
-            }
+            ContentView()
+                .environmentObject(NavigationManager.shared)
+                .onReceive(NotificationCenter.default.publisher(for: .navigateToPlantDetail)) { notification in
+                    if let pid = notification.object as? String {
+                        NavigationManager.shared.navigateToPlant(pid: pid)
+                    }
+                }
         }
-        .modelContainer(for: SavedPlant.self)
     }
 }
 
 #Preview {
-    PlantListView()
-}
-
-#Preview{
-    MyGardenView()
-}
-
-#Preview{
-    WateringScheduleView()
+    ContentView()
 }

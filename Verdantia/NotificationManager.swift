@@ -5,7 +5,7 @@ import UserNotifications
 /// scheduling local reminders. Interacts with `UNUserNotificationCenter` to
 /// deliver alerts when it's time to water a plant.
 final class NotificationManager {
-    static let shared = NotificationManager()
+static let shared = NotificationManager()
     private let center = UNUserNotificationCenter.current()
 
     private init() {

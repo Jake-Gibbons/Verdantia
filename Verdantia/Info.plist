@@ -27,6 +27,10 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<key>OPBClientID</key>
+	<string>A1SOGgiETcdzgVYZl3UjUfR95vko0uuj9cpCpIRc</string>
+	<key>OPBClientSecret</key>
+	<string>2eSpkktcpmMVcZcA6H2oe8D9LTbV6mXzisrOsldjiHT2TDyEHiBCYwB2GkuCThJbCyN2DL6yV6iBFvikRX2NYR9cIGnNml6JfVGWhhqw9NrhAFMxtsa34M8FqGApkIRp</string>
 	<key>PerenualAPIKey</key>
 	<string>sk-iJQs6887e13964f7c11602</string>
 </dict>
